@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<title>WorldGold — Tap Tap</title>
+<style>
+:root{--bg1:#6c48ff;--bg2:#1b103a;--card:rgba(255,255,255,.06);--line:rgba(255,255,255,.08)}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial;color:#fff;background:radial-gradient(1200px 600px at 50% -20%,var(--bg1) 10%,var(--bg2) 60%)}
+main{max-width:900px;margin:18px auto calc(120px + env(safe-area-inset-bottom,0px));padding:0 10px}
+
+/* Header */
+header{display:flex;align-items:center;justify-content:space-between;margin:8px 0 14px;padding-left:76px}
+h1{margin:0}
+.small{font-size:12px;color:#c7c4ff}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:12px;margin:12px 0;position:relative}
+.row{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.3);border-radius:12px;padding:10px 12px;margin-top:8px}
+
+/* Flotantes */
+.profileBtnTL{position:fixed;left:14px;top:14px;background:#06d6a0;border:none;border-radius:50%;width:54px;height:54px;
+  display:grid;place-items:center;cursor:pointer;color:#08251b;font-size:22px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:60}
+.trophyBtn{position:fixed;left:14px;top:78px;background:#ffd166;border:none;border-radius:50%;width:46px;height:46px;
+  display:grid;place-items:center;cursor:pointer;color:#2b2005;font-size:20px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:60}
+.inboxBtn{position:fixed;left:14px;top:132px;background:#7c5cff;border:none;border-radius:50%;width:46px;height:46px;
+  display:grid;place-items:center;cursor:pointer;color:#fff;font-size:20px;box-shadow:0 8px 20px rgba(0,0,0,.35);z-index:60}
+.badge{position:absolute;top:-6px;right:-6px;background:#ff3b3b;color:#fff;border-radius:999px;min-width:18px;height:18px;display:grid;place-items:center;font-size:11px;font-weight:700;padding:0 6px}
+.hideFloats .profileBtnTL,.hideFloats .trophyBtn,.hideFloats .inboxBtn{display:none}
+
+/* Drawers genéricos */
+.backdrop{position:fixed;inset:0;background:rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:opacity .2s;z-index:55}
+.backdrop.show{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:-380px;width:min(360px,92vw);height:100dvh;background:rgba(10,8,24,.98);
+  border-left:1px solid rgba(255,255,255,.1);padding:16px 16px calc(24px + env(safe-area-inset-bottom,0px));transition:right .28s ease;overflow:auto;z-index:56}
+.drawer.show{right:0}
+.drawer .close{position:sticky;top:0;margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.25);
+  background:transparent;color:#fff;cursor:pointer;font-size:18px}
+
+/* Tap zone */
+.tapWrap{display:grid;grid-template-columns:1fr minmax(0,300px);gap:12px;align-items:start}
+@media (max-width:880px){.tapWrap{grid-template-columns:1fr}}
+.coinBox{position:relative;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:12px;display:grid;place-items:center}
+.chip{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;background:rgba(0,0,0,.55);
+  border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:4px 10px;font-size:13px;backdrop-filter:blur(4px)}
+.coinWrap{position:relative;width:clamp(260px,75vw,360px);height:clamp(260px,75vw,360px);border-radius:999px;display:grid;place-items:center;background:radial-gradient(circle at 50% 40%, #372e78, #1b143f 70%);overflow:visible}
+.autoDot{position:absolute;top:10px;right:10px;width:12px;height:12px;border-radius:50%;background:#666;border:2px solid rgba(255,255,255,.6)}
+.autoDot.blink{animation:blink 1s linear infinite}
+@keyframes blink{0%,49%{background:#e03030}50%,100%{background:#992020}}
+.coin{width:clamp(220px,68vw,320px);height:clamp(220px,68vw,320px);border-radius:999px;display:grid;place-items:center;background:linear-gradient(145deg,#2a2555,#1c143f);
+  border:1px solid rgba(255,255,255,.12);user-select:none;cursor:pointer;transition:transform .08s ease;position:relative}
+.coin:active{transform:scale(0.98)}
+.coinEmoji{font-size:48px}
+.gain{position:absolute;left:50%;top:42%;transform:translate(-50%,-50%);font-weight:800;opacity:0;pointer-events:none;z-index:2}
+.gain.show{animation:float .6s ease-out forwards}
+@keyframes float{from{opacity:0;transform:translate(-50%,-10px) scale(.9)}50%{opacity:1}to{opacity:0;transform:translate(-50%,-40px) scale(1.05)}}
+
+/* Refill (izquierda) */
+.refill{position:absolute;left:-8px;top:50%;transform:translate(-100%,-50%);width:40px;height:40px;border-radius:50%;
+  border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);display:grid;place-items:center;cursor:pointer}
+.refill.pulse{animation:pulse 1.2s ease-in-out infinite}
+.refillPrice{position:absolute;left:-8px;top:calc(50% + 28px);transform:translate(-100%,-50%);font-size:11px;color:#c7c4ff;background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.18);border-radius:8px;padding:2px 6px}
+@keyframes pulse{0%,100%{transform:translate(-100%,-50%) scale(1)}50%{transform:translate(-100%,-50%) scale(1.08)}}
+
+/* Energía */
+.energyWrap{margin-top:12px;width:92%;text-align:center}
+.energyBar{height:14px;background:#231b68;border-radius:999px;overflow:hidden;position:relative;border:1px solid rgba(255,255,255,.12)}
+.energyFill{height:100%;background:linear-gradient(90deg,#7c5cff,#bdb3ff);background-size:200% 100%;animation:shimmer 3s linear infinite}
+@keyframes shimmer{0%{background-position:0 0}100%{background-position:200% 0}}
+.energyLbl{margin-top:6px;font-size:12px;color:#bdb3ff}
+
+/* Panel Boosters */
+.upMiniBtn{position:absolute;right:-8px;top:50%;transform:translate(100%,-50%);background:#7c5cff;border:none;border-radius:999px;padding:10px;cursor:pointer}
+.upMiniBtn span{font-size:18px;line-height:1}
+.upBackdrop{position:fixed;inset:0;background:rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:.2s;z-index:54}
+.upBackdrop.show{opacity:1;pointer-events:auto}
+.upMini{position:fixed;right:-340px;top:70px;width:min(320px,90vw);background:rgba(10,8,24,.98);border-left:1px solid rgba(255,255,255,.12);
+  border-top-left-radius:12px;border-bottom-left-radius:12px;box-shadow:-10px 0 30px rgba(0,0,0,.35);transition:right .28s ease;z-index:56}
+.upMini.show{right:0}
+.upItem{border-bottom:1px dashed rgba(255,255,255,.12);padding:10px 12px}
+.upItem:last-child{border-bottom:none}
+.cta{padding:8px 12px;border-radius:10px;border:none;cursor:pointer;background:#7c5cff;color:#fff;font-weight:700}
+.ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
+.price{font-size:12px;color:#bdb3ff}
+
+/* Inbox list */
+.msg{border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:10px;margin:10px 0;background:rgba(0,0,0,.25)}
+.msg.unread{border-color:#ffd166}
+.csBody{padding:8px 0}
+</style>
+</head>
+<body>
+
+<!-- Flotantes -->
+<button id="profileBtn" class="profileBtnTL" title="Perfil">👤</button>
+<button id="trophyBtn" class="trophyBtn" title="Leaderboard">🏆</button>
+<button id="inboxBtn" class="inboxBtn" title="Inbox">✉️ <span id="inboxBadge" class="badge" style="display:none">0</span></button>
+
+<main>
+  <header>
+    <div style="display:flex;gap:8px;align-items:center"><h1>WorldGold</h1></div>
+    <div style="text-align:right;line-height:1.3"><div class="small" data-i18n="wldbalance">WLD Balance:</div><div class="small"><b id="balWLD">0.00</b> WLD</div></div>
+  </header>
+
+  <!-- TAP TAP -->
+  <section class="card">
+    <h3 style="margin:0 0 10px" id="tapTitle">Tap · Gana WLGp</h3>
+    <div class="tapWrap">
+      <div class="coinBox">
+        <div class="chip">WLGp: <b id="balWLGp">0.000</b></div>
+
+        <div class="coinWrap">
+          <div id="autoDot" class="autoDot" title="Autobot"></div>
+
+          <!-- Refill a la izquierda + precio -->
+          <button id="refillBtn" class="refill" title="Refill"><span>⚡</span></button>
+          <div id="refillPrice" class="refillPrice">0.10 WLD</div>
+
+          <div id="coin" class="coin" aria-label="Tap">
+            <div class="coinEmoji">🪙</div>
+            <div id="gain" class="gain">+0.40</div>
+          </div>
+
+          <div class="energyWrap">
+            <div class="energyBar"><div id="energyFill" class="energyFill" style="width:100%"></div></div>
+            <div class="energyLbl">⚡ <b id="energyNow">100</b>/<b id="energyMax">100</b></div>
+          </div>
+        </div>
+
+        <!-- botón (icon-only) para abrir panel -->
+        <button id="openUp" class="upMiniBtn" aria-label="Boosters"><span>⚙️</span></button>
+      </div>
+
+      <!-- Panel lateral de boosters -->
+      <div id="upBackdrop" class="upBackdrop"></div>
+      <aside id="upMini" class="upMini" aria-label="Boosters">
+        <div class="upItem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div><b id="txtPower">Power +0.01</b><div class="small"><span id="txtCurrent">Actual:</span> <b id="lvlPower">0.40</b> WLGp/tap</div></div>
+            <div style="text-align:right"><div class="price"><span id="txtPrice">Precio:</span> <b id="pricePower">0.1</b> WLD</div><button id="buyPower" class="cta" style="margin-top:6px" id="btnImprovePower">Mejorar</button></div>
+          </div>
+          <div class="small" style="margin-top:4px" id="txtPowerTiers">Tramos: 0.40–0.49 → 0.1 WLD; 0.50–0.59 → 0.2 WLD; 0.60–0.69 → 0.3 WLD…</div>
+        </div>
+        <div class="upItem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div><b id="txtBattery">Battery +50</b><div class="small"><span id="txtCurrent2">Actual:</span> <b id="lvlCap">100</b> taps</div></div>
+            <div style="text-align:right"><div class="price"><span id="txtPrice2">Precio:</span> <b id="priceCap">0.1</b> WLD</div><button id="buyCap" class="cta" style="margin-top:6px">Mejorar</button></div>
+          </div>
+        </div>
+        <div class="upItem">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+            <div><b id="txtSpeed">Speed +15%</b><div class="small"><span id="txtCurrent3">Actual:</span> <b id="lvlRegen">+0%</b> · <span class="small" id="txtRate">Recarga:</span> <b id="regenRate">0</b> /min</div></div>
+            <div style="text-align:right"><div class="price"><span id="txtPrice3">Precio:</span> <b id="priceRegen">0.1</b> WLD</div><button id="buyRegen" class="cta" style="margin-top:6px">Mejorar</button></div>
+          </div>
+        </div>
+        <div class="upItem">
+          <div><b>Autotap</b><div class="small" id="txtAutoDesc">3h consumible. 6h/8h/24h: pago único, reactivables y acumulables.</div></div>
+          <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:8px">
+            <button class="ghost" data-auto="3">3h — 3 WLD</button>
+            <button class="ghost" data-auto="6">6h — 5 WLD</button>
+            <button class="ghost" data-auto="8">8h — 7 WLD</button>
+            <button class="ghost" data-auto="24">24h — 20 WLD</button>
+          </div>
+          <div class="small" style="margin-top:6px"><span id="txtStatus">Estado:</span> <b id="autoState">Off</b> · <span id="txtRemain">Queda:</span> <b id="autoRemain">—</b></div>
+          <div class="small" id="autoUnlocks" style="margin-top:4px;color:#c7c4ff"></div>
+          <div style="text-align:center;margin-top:8px"><button id="btnReactivate" class="ghost" style="display:none">Reactivar sesión</button></div>
+        </div>
+        <div class="upItem" style="text-align:center"><button id="closeUp" class="ghost" data-i18n="close">Cerrar</button></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- Herramientas demo -->
+  <section class="card">
+    <h3 style="margin:0 0 8px" data-i18n="tools">Herramientas de prueba (demo)</h3>
+    <div class="row">
+      <button id="btnAddWLD" class="ghost" data-i18n="addwld">+5 WLD</button>
+      <button id="btnReset" class="ghost" data-i18n="reset">Reset</button>
+    </div>
+  </section>
+</main>
+
+<!-- Inbox -->
+<div id="backdropIN" class="backdrop"></div>
+<aside id="drawerIN" class="drawer" aria-modal="true" role="dialog">
+  <button class="close" data-close="IN" aria-label="Cerrar">×</button>
+  <h3 style="margin:0 0 8px" data-i18n="inbox">Inbox</h3>
+  <div id="msgList"></div>
+</aside>
+
+<!-- Coming soon -->
+<div id="backdropCS" class="backdrop"></div>
+<aside id="drawerCS" class="drawer" aria-modal="true" role="dialog">
+  <button class="close" data-close="CS" aria-label="Cerrar">×</button>
+  <h3 style="margin:0 0 8px" data-i18n="coming">Coming soon</h3>
+  <div class="csBody">
+    <p class="small" data-i18n="comingdesc">Leaderboard, Full Pass y Claim WLD estarán disponibles pronto. Revisa el Inbox.</p>
+  </div>
+</aside>
+
+<!-- Perfil -->
+<div id="backdropPR" class="backdrop"></div>
+<aside id="drawerPR" class="drawer" aria-modal="true" role="dialog">
+  <button class="close" data-close="PR" aria-label="Cerrar">×</button>
+  <h3 style="margin:0 0 8px" data-i18n="profile">Perfil</h3>
+  <div class="row" style="gap:10px;align-items:center">
+    <div style="flex:1;display:flex;gap:8px">
+      <input id="nick2" placeholder="@your-nick" maxlength="20" style="flex:1;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:transparent;color:#fff;padding:6px 10px">
+      <button id="saveNick2" class="ghost" data-i18n="save">Guardar</button>
+    </div>
+    <select id="langSel" style="width:160px;border:1px solid rgba(255,255,255,.25);border-radius:10px;background:transparent;color:#fff;padding:6px 10px">
+      <option value="en">English</option>
+      <option value="es" selected>Español</option>
+      <option value="pt">Português (beta)</option>
+      <option value="id">Bahasa (beta)</option>
+    </select>
+  </div>
+  <div class="row"><div data-i18n="user">Usuario</div><div><b id="profUser">@YOU</b></div></div>
+  <div class="row"><div>WLG</div><div><b id="profWLG">0</b></div></div>
+  <div class="row"><div>WLGp</div><div><b id="profWLGp">0</b></div></div>
+  <div class="row"><div>WLD</div><div><b id="profWLD">0.00</b></div></div>
+  <h4 style="margin:12px 0 6px" data-i18n="inventory">Inventario</h4>
+  <div id="invList" class="small" data-i18n="noitems">(Sin ítems aún)</div>
+</aside>
+
+<script>
+/* ===== i18n ===== */
+const i18n = {
+  es:{wldbalance:'WLD Balance:',tapTitle:'Tap · Gana WLGp',tools:'Herramientas de prueba (demo)',addwld:'+5 WLD',reset:'Reset',inbox:'Inbox',coming:'Próximamente',comingdesc:'Leaderboard, Full Pass y Claim WLD estarán disponibles pronto. Revisa el Inbox.',profile:'Perfil',save:'Guardar',user:'Usuario',inventory:'Inventario',noitems:'(Sin ítems aún)',close:'Cerrar',current:'Actual:',price:'Precio:',power:'+0.01 Power',battery:'+50 Battery',speed:'+15% Speed',rate:'Recarga:'},
+  en:{wldbalance:'WLD Balance:',tapTitle:'Tap · Earn WLGp',tools:'Testing tools (demo)',addwld:'+5 WLD',reset:'Reset',inbox:'Inbox',coming:'Coming soon',comingdesc:'Leaderboard, Full Pass and Claim WLD coming soon. Check Inbox.',profile:'Profile',save:'Save',user:'User',inventory:'Inventory',noitems:'(No items yet)',close:'Close',current:'Current:',price:'Price:',power:'+0.01 Power',battery:'+50 Battery',speed:'+15% Speed',rate:'Regen:'}
+};
+function t(k){const lang=localStorage.getItem('wlg_lang')||'es'; return (i18n[lang]&&i18n[lang][k])||i18n.en[k]||k;}
+function applyI18n(){
+  document.querySelectorAll('[data-i18n]').forEach(el=>{el.textContent=t(el.getAttribute('data-i18n'));});
+  document.getElementById('tapTitle').textContent=t('tapTitle');
+  document.getElementById('txtPower').firstChild && (document.getElementById('txtPower').firstChild.textContent='');
+  document.getElementById('txtPower').textContent = 'Power +0.01';
+  document.getElementById('txtCurrent').textContent = t('current');
+  document.getElementById('txtCurrent2').textContent= t('current');
+  document.getElementById('txtCurrent3').textContent= t('current');
+  document.getElementById('txtPrice').textContent   = t('price');
+  document.getElementById('txtPrice2').textContent  = t('price');
+  document.getElementById('txtPrice3').textContent  = t('price');
+  document.getElementById('txtRate').textContent    = t('rate');
+}
+
+/* ===== Helpers ===== */
+const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
+let AC; function tone(f=560,d=.05,toneType='triangle',v=.08){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=toneType;o.frequency.value=f;g.gain.value=v;o.connect(g).connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.stop(AC.currentTime+d+0.02);}catch(e){}}
+function fmt(ms){const s=Math.max(0,Math.floor(ms/1e3)),h=Math.floor(s/3600),m=Math.floor((s%3600)/60),sec=s%60;return h?`${h}h ${m}m ${sec}s`:`${m}m ${sec}s`}
+
+/* ===== Config ===== */
+const BASE_CAP=100;               // empieza en 100
+const BASE_REGEN_PER_SEC=0.6;     // ~36/min
+const REGEN_STEP=0.15;            // +15% por compra
+const POWER_BASE=0.40;            // WLGp/tap
+const POWER_STEP=0.01;
+const CAP_STEP=50;                // +50 por compra
+const AUTOBOT_RATE_TPS=1.4;       // un poco más lento
+
+/* ===== Estado ===== */
+let wlg  = +localStorage.getItem('wlg_balance')||0;          // token (no sube con tap)
+let wlgp = +localStorage.getItem('wlg_points') ||0;          // puntos
+let wld  = +localStorage.getItem('wlg_wld')     ||0;         // WLD app
+let energy=+localStorage.getItem('wlg_energy'); if(isNaN(energy)) energy=BASE_CAP;
+let lastTs=+localStorage.getItem('wlg_last_ts')||Date.now();
+let powerBuys=+localStorage.getItem('wlg_power_buys')||0;
+let capBuys  =+localStorage.getItem('wlg_cap_buys')  ||0;
+let regenBuys=+localStorage.getItem('wlg_regen_buys')||0;
+
+/* Autotap */
+let autoUntil=+localStorage.getItem('wlg_auto_until')||0;
+let autoUnlock6=!!JSON.parse(localStorage.getItem('wlg_auto_u6')||'false');
+let autoUnlock8=!!JSON.parse(localStorage.getItem('wlg_auto_u8')||'false');
+let autoUnlock24=!!JSON.parse(localStorage.getItem('wlg_auto_u24')||'false');
+let autoPaused50=false;
+
+/* Inbox demo */
+let inbox=JSON.parse(localStorage.getItem('wlg_inbox')||'[]');
+if(inbox.length===0){
+  inbox=[{id:1,title:'Bienvenido',body:'Toca la moneda para ganar WLGp. Abre ⚙️ para mejoras y Autotap.',unread:true,ts:Date.now()}];
+  localStorage.setItem('wlg_inbox',JSON.stringify(inbox));
+}
+
+/* ===== Derivados ===== */
+function power(){return +(POWER_BASE + POWER_STEP*powerBuys).toFixed(2)}
+function capMax(){return BASE_CAP + capBuys*CAP_STEP}
+function regenPerSec(){return BASE_REGEN_PER_SEC * (1 + regenBuys*REGEN_STEP)}
+function pricePower(){ const p=power(); const tier=Math.max(0,Math.floor((p-0.40+1e-9)/0.10)); return +(0.1*(tier+1)).toFixed(1); }
+function priceCap(){   return +(0.1*(capBuys+1)).toFixed(1) }
+function priceRegen(){ return +(0.1*(regenBuys+1)).toFixed(1) }
+function refillCost(){ return +(capMax()/1000).toFixed(2) }     // 0.1% de capacidad
+
+/* ===== Refs ===== */
+const balWLD=$('#balWLD'), balWLGp=$('#balWLGp');
+const coin=$('#coin'), gain=$('#gain'), autoDot=$('#autoDot');
+const energyFill=$('#energyFill'), energyNow=$('#energyNow'), energyMax=$('#energyMax');
+const refillBtn=$('#refillBtn'), refillPrice=$('#refillPrice');
+const upBackdrop=$('#upBackdrop'), openUp=$('#openUp'), upMini=$('#upMini'), closeUp=$('#closeUp');
+const lvlPower=$('#lvlPower'), lvlCap=$('#lvlCap'), lvlRegen=$('#lvlRegen'), regenRate=$('#regenRate');
+const pricePowerEl=$('#pricePower'), priceCapEl=$('#priceCap'), priceRegenEl=$('#priceRegen');
+const buyPower=$('#buyPower'), buyCap=$('#buyCap'), buyRegen=$('#buyRegen');
+const autoState=$('#autoState'), autoRemain=$('#autoRemain'), autoUnlocks=$('#autoUnlocks'), btnReactivate=$('#btnReactivate');
+const inboxBtn=$('#inboxBtn'), inboxBadge=$('#inboxBadge'), drawerIN=$('#drawerIN'), backdropIN=$('#backdropIN'), msgList=$('#msgList');
+const trophyBtn=$('#trophyBtn'), drawerCS=$('#drawerCS'), backdropCS=$('#backdropCS');
+const profileBtn=$('#profileBtn'), drawerPR=$('#drawerPR'), backdropPR=$('#backdropPR');
+const nick2=$('#nick2'), saveNick2=$('#saveNick2'), langSel=$('#langSel');
+const profUser=$('#profUser'), profWLG=$('#profWLG'), profWLGp=$('#profWLGp'), profWLD=$('#profWLD');
+const btnAddWLD=$('#btnAddWLD'), btnReset=$('#btnReset');
+
+/* ===== Lógica ===== */
+function lazyRegen(){
+  const now=Date.now(), dt=(now-lastTs)/1000; lastTs=now;
+  energy=Math.min(capMax(), energy + regenPerSec()*dt);
+  localStorage.setItem('wlg_last_ts',String(lastTs));
+  localStorage.setItem('wlg_energy',String(energy));
+}
+function render(){
+  balWLD.textContent=wld.toFixed(2);
+  balWLGp.textContent=wlgp.toFixed(3);
+
+  const eMax=capMax(); const pct=Math.max(0,Math.min(100,(energy/eMax)*100));
+  energyFill.style.width=pct.toFixed(1)+'%';
+  energyNow.textContent=Math.floor(energy); energyMax.textContent=eMax;
+  energyFill.style.animationPlayState = pct>=99.9 ? 'paused' : 'running';
+
+  // refill
+  const cost=refillCost();
+  refillPrice.textContent = cost.toFixed(2)+' WLD';
+  refillBtn.classList.toggle('pulse', pct<25);
+  refillBtn.disabled = (wld<cost || energy>=eMax-1e-6);
+
+  // boosters
+  lvlPower.textContent=power().toFixed(2);
+  lvlCap.textContent=eMax;
+  const regenPerc=Math.round(regenBuys*REGEN_STEP*100);
+  lvlRegen.textContent='+'+regenPerc+'%';
+  regenRate.textContent=(regenPerSec()*60).toFixed(1);
+  pricePowerEl.textContent=pricePower().toFixed(1);
+  priceCapEl.textContent=priceCap().toFixed(1);
+  priceRegenEl.textContent=priceRegen().toFixed(1);
+  buyPower.disabled=wld<pricePower();
+  buyCap.disabled  =wld<priceCap();
+  buyRegen.disabled=wld<priceRegen();
+
+  // autotap
+  const active=Date.now()<autoUntil;
+  autoDot.classList.toggle('blink',active);
+  autoState.textContent=active?'ON':'Off';
+  autoRemain.textContent=active?fmt(autoUntil-Date.now()):'—';
+  const unlockedTxt = ['6h','8h','24h'].filter((h,i)=>[autoUnlock6,autoUnlock8,autoUnlock24][i]).join(' + ');
+  autoUnlocks.textContent = unlockedTxt?('Desbloqueado: '+unlockedTxt):'';
+  btnReactivate.style.display = (!active && (autoUnlock6||autoUnlock8||autoUnlock24))?'inline-block':'none';
+
+  // inbox badge
+  const unread=inbox.filter(m=>m.unread).length; inboxBadge.style.display=unread?'grid':'none'; inboxBadge.textContent=unread||'0';
+
+  // perfil
+  profWLG.textContent=wlg.toFixed(3); profWLGp.textContent=wlgp.toFixed(3); profWLD.textContent=wld.toFixed(2);
+}
+function addTap(n=1){
+  const doable=Math.min(Math.floor(energy), n);
+  if(doable<=0) return 0;
+  energy-=doable;
+  const gainPoints = power()*doable;
+  wlgp += gainPoints;
+  localStorage.setItem('wlg_points',String(wlgp));
+  return gainPoints;
+}
+function popGain(txt){ gain.textContent=txt; gain.classList.remove('show'); void gain.offsetWidth; gain.classList.add('show'); }
+
+/* ===== Eventos ===== */
+coin.addEventListener('click',()=>{
+  lazyRegen();
+  const g=addTap(1);
+  if(g>0){ popGain(`+${g.toFixed(2)}`); tone(780,0.05,'triangle',.07); coin.style.transform='scale(1.1)'; setTimeout(()=>{coin.style.transform='scale(1)'},120); }
+  render();
+});
+
+/* Panel Boosters open/close */
+openUp.onclick=()=>{document.body.classList.add('hideFloats'); upMini.classList.add('show'); upBackdrop.classList.add('show')}
+closeUp.onclick=()=>{upMini.classList.remove('show'); upBackdrop.classList.remove('show'); document.body.classList.remove('hideFloats')}
+upBackdrop.onclick=()=>{closeUp.click()}  // cerrar tocando fuera
+
+/* Compras */
+buyPower.onclick=()=>{const p=pricePower(); if(wld<p)return; wld-=p; powerBuys++; localStorage.setItem('wlg_wld',String(wld)); localStorage.setItem('wlg_power_buys',String(powerBuys)); render();}
+buyCap.onclick  =()=>{const p=priceCap();   if(wld<p)return; wld-=p; capBuys++; energy=Math.min(capMax(),energy); localStorage.setItem('wlg_wld',String(wld)); localStorage.setItem('wlg_cap_buys',String(capBuys)); render();}
+buyRegen.onclick=()=>{const p=priceRegen(); if(wld<p)return; wld-=p; regenBuys++; localStorage.setItem('wlg_wld',String(wld)); localStorage.setItem('wlg_regen_buys',String(regenBuys)); render();}
+function doRefill(){ const cost=refillCost(); if(wld<cost)return; const eMax=capMax(); if(energy>=eMax-1e-6)return; wld-=cost; localStorage.setItem('wlg_wld',String(wld)); energy=eMax; render(); }
+refillBtn.onclick=doRefill;
+
+/* Autotap compras y reactivación */
+$$('.upItem button.ghost[data-auto]').forEach(b=>b.onclick=()=>{
+  const hours=+b.dataset.auto;
+  const price=(hours===3?3:hours===6?5:hours===8?7:hours===24?20:999);
+  if(hours===3){ // consumible
+    if(wld<price){alert('Saldo WLD insuficiente');return;}
+    wld-=price; localStorage.setItem('wlg_wld',String(wld));
+    const now=Date.now(); autoUntil=Math.max(autoUntil,now)+hours*3600*1000; localStorage.setItem('wlg_auto_until',String(autoUntil));
+  }else{
+    // pago único
+    if((hours===6&&autoUnlock6)||(hours===8&&autoUnlock8)||(hours===24&&autoUnlock24)){ alert('Ya comprado'); return; }
+    if(wld<price){alert('Saldo WLD insuficiente');return;}
+    wld-=price; localStorage.setItem('wlg_wld',String(wld));
+    if(hours===6){autoUnlock6=true; localStorage.setItem('wlg_auto_u6','true')}
+    if(hours===8){autoUnlock8=true; localStorage.setItem('wlg_auto_u8','true')}
+    if(hours===24){autoUnlock24=true; localStorage.setItem('wlg_auto_u24','true')}
+  }
+  render();
+});
+btnReactivate.onclick=()=>{ const sum=(autoUnlock6?6:0)+(autoUnlock8?8:0)+(autoUnlock24?24:0); if(sum<=0) return; autoPaused50=false; autoUntil=Date.now()+sum*3600*1000; localStorage.setItem('wlg_auto_until',String(autoUntil)); render();}
+
+/* Loop: recarga + autotap (pausa <50%) */
+setInterval(()=>{
+  lazyRegen();
+  const now=Date.now(); const active=now<autoUntil;
+  if(active){
+    const eMax=capMax(); const pct=energy/eMax;
+    if(autoPaused50){ if(pct>=0.5){ autoPaused50=false; } }
+    else{ if(energy<1){ autoPaused50=true; } }
+    if(!autoPaused50){
+      const perTick = AUTOBOT_RATE_TPS/5;
+      const taps = Math.max(1, Math.floor(perTick));
+      const g=addTap(taps);
+      if(g>0) tone(560,0.02,'square',.03);
+    }
+  }
+  render();
+},200);
+
+/* Inbox & Drawers */
+function openDrawer(el,b){document.body.classList.add('hideFloats'); el.classList.add('show'); b.classList.add('show')}
+function closeDrawer(el,b){el.classList.remove('show'); b.classList.remove('show'); if(!document.querySelector('.drawer.show')) document.body.classList.remove('hideFloats')}
+inboxBtn.onclick=()=>{ const msgList=$('#msgList'); msgList.innerHTML=''; inbox.forEach(m=>{const div=document.createElement('div'); div.className='msg'+(m.unread?' unread':''); const dt=new Date(m.ts).toLocaleString(); div.innerHTML=`<div style="display:flex;justify-content:space-between;gap:8px"><b>${m.title}</b><span class="small">${dt}</span></div><div class="small" style="margin-top:4px">${m.body}</div>`; msgList.appendChild(div);}); openDrawer(drawerIN,backdropIN); inbox=inbox.map(m=>({...m,unread:false})); localStorage.setItem('wlg_inbox',JSON.stringify(inbox)); render();}
+backdropIN.onclick=()=>closeDrawer(drawerIN,backdropIN); drawerIN.querySelector('.close').onclick=()=>closeDrawer(drawerIN,backdropIN);
+
+trophyBtn.onclick=()=>openDrawer(drawerCS,backdropCS);
+backdropCS.onclick=()=>closeDrawer(drawerCS,backdropCS); drawerCS.querySelector('.close').onclick=()=>closeDrawer(drawerCS,backdropCS);
+
+/* Perfil + idioma */
+profileBtn.onclick=()=>openDrawer(drawerPR,backdropPR);
+backdropPR.onclick=()=>closeDrawer(drawerPR,backdropPR); drawerPR.querySelector('.close').onclick=()=>closeDrawer(drawerPR,backdropPR);
+saveNick2.onclick=()=>{let v=(nick2.value||'').trim(); v=v?(v.startsWith('@')?v:'@'+v):'@YOU'; localStorage.setItem('wlg_nick',v); profUser.textContent=v;}
+langSel.value = localStorage.getItem('wlg_lang') || 'es';
+langSel.onchange=()=>{ localStorage.setItem('wlg_lang', langSel.value); applyI18n(); }
+
+/* Herramientas demo */
+btnAddWLD.onclick=()=>{wld+=5; localStorage.setItem('wlg_wld',String(wld)); render();}
+btnReset.onclick =()=>{ if(confirm('¿Reiniciar todo?')){ localStorage.clear(); location.reload(); } }
+
+/* Init */
+(function init(){
+  const nick=localStorage.getItem('wlg_nick')||'@YOU'; $('#profUser').textContent=nick; $('#nick2').value=nick;
+  document.body.style.minHeight='100vh';
+  applyI18n();
+  energy=Math.min(capMax(),energy);
+  setInterval(()=>{lazyRegen(); render();},1000);
+  render();
+})();
+</script>
+</body>
+</html>
