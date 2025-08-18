@@ -4,6 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no"/>
 <title>WorldGold — Tap</title>
+<link rel="icon" href="images/logo_main.png" type="image/png"/>
 <style>
 :root{
   --bg1:#6c48ff; --bg2:#1b103a; --ink:#fff; --mut:#c7c4ff;
@@ -135,7 +136,11 @@ body{
 .ghost{background:transparent;border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:10px;padding:6px 10px;cursor:pointer}
 .price{font-size:12px;color:var(--mut)}
 
-/* Demo tools (se ocultan en móvil si quieres) */
+/* Galería de imágenes */
+.gallery{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:20px}
+.gallery img{width:120px;height:auto;border-radius:8px}
+
+  /* Demo tools (se ocultan en móvil si quieres) */
 .card{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:12px;margin:12px}
 @media (max-width:560px){ .card{display:none} } /* oculta panel demo en móviles */
 </style>
@@ -262,7 +267,16 @@ body{
   <div class="upItem" style="text-align:center"><button id="closeUp" class="ghost">Cerrar</button></div>
 </aside>
 
-<script>
+<div class="gallery">
+  <img src="images/logo_main.png" alt="Logo circular dorado"/>
+  <img src="images/logo_glow.png" alt="Logo circular con brillo"/>
+  <img src="images/refresh_icon.png" alt="Icono de recarga dorado"/>
+  <img src="images/gold_gem.png" alt="Gema dorada"/>
+  <img src="images/blank.png" alt="Lienzo blanco"/>
+  <img src="images/noise.png" alt="Textura de ruido"/>
+  <img src="images/starburst.png" alt="Destello de estrella"/>
+</div>
+  <script>
 /* ===== Helpers ===== */
 const $=q=>document.querySelector(q), $$=q=>[...document.querySelectorAll(q)];
 let AC; function tone(f=560,d=.05,t='triangle',v=.08){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const o=AC.createOscillator(),g=AC.createGain();o.type=t;o.frequency.value=f;g.gain.value=v;o.connect(g).connect(AC.destination);o.start();g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+d);o.stop(AC.currentTime+d+0.02);}catch(e){}}
